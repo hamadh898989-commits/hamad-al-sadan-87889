@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>لعبة الحروف - The Three shop</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #1a0033 0%, #0f0f23 50%, #000 100%);
+      color: #fff;
+      min-height: 100vh;
+      padding: 10px;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      margin: 0 auto 10px;
+      display: block;
+      box-shadow: 0 0 20px rgba(255,255,255,0.3);
+    }
+    
+    h1 {
+      font-size: 28px;
+      background: linear-gradient(45deg, #ff6b35, #f7931e, #ffd23f);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 5px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+      height: calc(100vh - 150px);
+    }
+    
+    .board {
+      background: rgba(20,20,40,0.9);
+      border-radius: 20px;
+      padding: 20px;
+      border: 2px solid #ff6b35;
+      box-shadow: 0 0 30px rgba(255,107,53,0.3);
+      overflow: hidden;
+    }
+    
+    .hex-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      height: 100%;
+    }
+    
+    .hex-row {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+    }
+    
+    .hex-cell {
+      width: 55px;
+      height: 55px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 50% 50% 10% 10% / 60% 60% 40% 40%;
+      color: white;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    
+    .hex-cell:hover:not(.disabled) {
+      transform: scale(1.1) rotate(5deg);
+      box-shadow: 0 8px 25px rgba(255,107,53,0.5);
+    }
+    
+    .hex-cell.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: scale(0.95);
+    }
+    
+    .hex-cell.team1 {
+      background: linear-gradient(135deg, #00d4aa, #00b894);
+      box-shadow: 0 0 20px rgba(0,212,170,0.6);
+      animation: winGreen 0.5s ease;
+    }
+    
+    .hex-cell.team2 {
+      background: linear-gradient(135deg, #ff6b35, #f7931e);
+      box-shadow: 0 0 20px rgba(255,107,53,0.6);
+      animation: winOrange 0.5s ease;
+    }
+    
+    @keyframes winGreen {
+      0% { transform: scale(0.8); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    
+    @keyframes winOrange {
+      0% { transform: scale(0.8); }
+      50% { transform: scale(1.2) rotate(10deg); }
+      100% { transform: scale(1); }
+    }
+    
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .question-area {
+      background: rgba(15,15,35,0.95);
+      border-radius: 15px;
+      padding: 20px;
+      border: 1px solid #ffd23f;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .question-header {
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: #ffd23f;
+    }
+    
+    .current-letter {
+      color: #ff6b35;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    
+    .question-text {
+      background: rgba(0,0,0,0.5);
+      border-radius: 10px;
+      padding: 20px;
+      font-size: 18px;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #444;
+      margin: 10px 0;
+    }
+    
+    .timer {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    
+    .timer.normal { color: #00d4aa; }
+    .timer.warning { color: #ffd23f; }
+    .timer.danger { color: #ff4757; }
+    
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 25px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(45deg, #ff6b35, #f7931e);
+      color: white;
+    }
+    
+    .btn-success { background: #00d4aa; color: #000; }
+    .btn-danger { background: #ff4757; color: white; }
+    
+    .teams {
+      display: flex;
+      gap: 10px;
+      margin-top: auto;
+    }
+    
+    .team {
+      flex: 1;
+      background: rgba(20,20,40,0.9);
+      border-radius: 15px;
+      padding: 15px;
+      border: 2px solid;
+      text-align: center;
+    }
+    
+    .team1 { border-color: #00d4aa; }
+    .team2 { border-color: #ff6b35; }
+    
+    .team-name {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    
+    .team-score {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    
+    .team1 .team-score { color: #00d4aa; }
+    .team2 .team-score { color: #ff6b35; }
+    
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+      .hex-row { gap: 4px; }
+      .hex-cell { width: 45px; height: 45px; font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="logo.png" alt="Logo" class="logo">
+    <h1>لعبة الحروف</h1>
+  </div>
+  
+  <div class="container">
+    <div class="board">
+      <div class="hex-grid" id="hexGrid">
+        <!-- الحروف تُنشأ ديناميكياً -->
+      </div>
+    </div>
+    
+    <div class="sidebar">
+      <div class="question-area">
+        <div class="question-header">
+          السؤال الحالي: <span class="current-letter" id="currentLetter">-</span>
+        </div>
+        <div class="question-text" id="questionText">اضغط على أي خلية للحصول على سؤال...</div>
+        <div class="timer" id="timer">⏱️ 00:30</div>
+        <div class="controls">
+          <button class="btn btn-primary" onclick="nextQuestion()">سؤال آخر</button>
+          <button class="btn btn-danger" onclick="clearQuestion()">مسح</button>
+        </div>
+      </div>
+      
+      <div class="teams">
+        <div class="team team1">
+          <div class="team-name">فريق أخضر</div>
+          <div class="team-score" id="score1">0</div>
+          <div class="controls">
+            <button class="btn btn-success" onclick="addScore(1,1)">+1</button>
+            <button class="btn btn-danger" onclick="addScore(1,-1)">-1</button>
+            <button class="btn btn-primary" onclick="claimCell(1)">الخلية لنا</button>
+          </div>
+        </div>
+        
+        <div class="team team2">
+          <div class="team-name">فريق برتقالي</div>
+          <div class="team-score" id="score2">0</div>
+          <div class="controls">
+            <button class="btn btn-success" onclick="addScore(2,1)">+1</button>
+            <button class="btn btn-danger" onclick="addScore(2,-1)">-1</button>
+            <button class="btn btn-primary" onclick="claimCell(2)">الخلية لنا</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const letters = ['أ','ب','ت','ث','ج','ح','خ','د','ذ','ر','ز','س','ش','ص','ض','ط','ظ','ع','غ','ف','ق','ك','ل','م','ن','ه','و','ي'];
+    
+    const questions = {
+      'أ': ['دولة عربية تبدأ بالألف؟', 'مدينة سعودية تبدأ بالألف؟', 'شخصية مشهورة تبدأ بالألف؟', 'أكلة تبدأ بالألف؟', 'مهنة تبدأ بالألف؟'],
+      'ب': ['دولة تبدأ بالباء؟', 'حيوان يبدأ بالباء؟', 'فاكهة تبدأ بالباء؟', 'مدينة تبدأ بالباء؟', 'مهنة تبدأ بالباء؟'],
+      'ت': ['مدينة تبدأ بالتاء؟', 'مهنة تبدأ بالتاء؟', 'أكلة تبدأ بالتاء؟', 'برنامج يبدأ بالتاء؟', 'لاعب يبدأ بالتاء؟'],
+      'ث': ['حيوان يبدأ بالثاء؟', 'مدينة تبدأ بالثاء؟', 'صفة جميلة بالثاء؟', 'شيء بالثاء؟', 'شخصية بالثاء؟'],
+      'ج': ['مدينة تبدأ بالجيم؟', 'حيوان يبدأ بالجيم؟', 'مهنة تبدأ بالجيم؟', 'أكلة بالجيم؟', 'نادي رياضي بالجيم؟'],
+      'ح': ['مدينة تبدأ بالحاء؟', 'حيوان يبدأ بالحاء؟', 'أكلة تبدأ بالحاء؟', 'مهنة بالحاء؟', 'صفة بالحاء؟'],
+      'خ': ['مدينة تبدأ بالخاء؟', 'شيء بالخاء؟', 'مهنة بالخاء؟', 'شخصية بالخاء؟', 'حيوان بالخاء؟'],
+      'د': ['دولة تبدأ بالدال؟', 'مهنة بالدال؟', 'أكلة بالدال؟', 'لاعب بالدال؟', 'شيء بالدال؟'],
+      'ذ': ['حيوان بالذال؟', 'صفة بالذال؟', 'شيء بالذال؟', 'شخصية بالذال؟', 'طبيعة بالذال؟'],
+      'ر': ['فاكهة بالراء؟', 'حيوان بالراء؟', 'مهنة بالراء؟', 'صفة بالراء؟', 'مدينة بالراء؟'],
+      'ز': ['فاكهة بالزاي؟', 'حيوان بالزاي؟', 'شيء بالزاي؟', 'شخصية بالزاي؟', 'مدينة بالزاي؟'],
+      'س': ['حيوان بالسين؟', 'أكلة بالسين؟', 'مهنة بالسين؟', 'صفة بالسين؟', 'مدينة بالسين؟'],
+      'ش': ['مشروب بالشين؟', 'حيوان بالشين؟', 'مهنة بالشين؟', 'مسلسل بالشين؟', 'مدينة بالشين؟'],
+      'ص': ['أكلة بالصاد؟', 'حيوان بالصاد؟', 'صفة بالصاد؟', 'شخصية بالصاد؟', 'مدينة بالصاد؟'],
+      'ض': ['كلمة ضيافة؟', 'أكلة بالضاد؟', 'صفة بالضاد؟', 'شخصية بالضاد؟', 'مكان بالضاد؟'],
+      'ط': ['أكلة بالطاء؟', 'مهنة بالطاء؟', 'حيوان بالطاء؟', 'صفة بالطاء؟', 'مدينة بالطاء؟'],
+      'ظ': ['عكس ليل بالظاء؟', 'وقت بالظاء؟', 'صفة بالظاء؟', 'شيء بالظاء؟', 'مكان بالظاء؟'],
+      'ع': ['دولة بالعين؟', 'أكلة بالعين؟', 'حيوان بالعين؟', 'صفة بالعين؟', 'مدينة بالعين؟'],
+      'غ': ['حيوان بالغين؟', 'أكلة بالغين؟', 'صفة بالغين؟', 'شخصية بالغين؟', 'مدينة بالغين؟'],
+      'ف': ['فاكهة بالفاء؟', 'حيوان بالفاء؟', 'مهنة بالفاء؟', 'نادي بالفاء؟', 'مدينة بالفاء؟'],
+      'ق': ['أكلة بالقاف؟', 'مهنة بالقاف؟', 'صفة بالقاف؟', 'شخصية بالقاف؟', 'مدينة بالقاف؟'],
+      'ك': ['حيوان بالكاف؟', 'مهنة بالكاف؟', 'نادي بالكاف؟', 'شيء بالكاف؟', 'مدينة بالكاف؟'],
+      'ل': ['حيوان باللام؟', 'أكلة باللام؟', 'صفة باللام؟', 'شخصية باللام؟', 'مدينة باللام؟'],
+      'م': ['أكلة بالميم؟', 'حيوان بالميم؟', 'مهنة بالميم؟', 'نادي بالميم؟', 'مدينة بالميم؟'],
+      'ن': ['نهر بالنون؟', 'حيوان بالنون؟', 'صفة بالنون؟', 'أكلة بالنون؟', 'مدينة بالنون؟'],
+      'ه': ['شيء بالهاء؟', 'مهنة بالهاء؟', 'أكلة بالهاء؟', 'صفة بالهاء؟', 'دولة بالهاء؟'],
+      'و': ['أكلة بالواو؟', 'حيوان بالواو؟', 'شخصية بالواو؟', 'صفة بالواو؟', 'مدينة بالواو؟'],
+      'ي': ['دولة بالياء؟', 'أكلة بالياء؟', 'شخصية بالياء؟', 'صفة بالياء؟', 'حيوان بالياء؟']
+    };
+
+    let currentLetter = null;
+    let timer = 30;
+    let timerInterval;
+    let scores = [0, 0];
+
+    // إنشاء الشبكة السداسية
+    function createHexGrid() {
+      const grid = document.getElementById('hexGrid');
+      const layout = [
+        ['أ','ب','ت','ث','ج','ح'],
+        ['خ',' ','د','ذ','ر','ز'],
+        [' ','س','ش','ص','ض','ط'],
+        ['ظ','ع','غ','ف','ق','ك'],
+        ['ل','م','ن','ه','و','ي']
+      ];
+      
+      layout.forEach(row => {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'hex-row';
+        row.forEach(char => {
+          const cell = document.createElement('button');
+          cell.className = 'hex-cell';
+          cell.textContent = char === ' ' ? '' : char;
+          if (char !== ' ') {
+            cell.dataset.letter = char;
+            cell.onclick = () => selectCell(char, cell);
+          }
+          rowDiv.appendChild(cell);
+        });
+        grid.appendChild(rowDiv);
+      });
+    }
+
+    function selectCell(letter, cell) {
+      if (cell.classList.contains('disabled')) return;
+      
+      currentLetter = letter;
+      document.getElementById('currentLetter').textContent = letter;
+      const q = questions[letter][Math.floor(Math.random() * 5)];
+      document.getElementById('questionText').textContent = `حرف ${letter}: ${q}`;
+      
+      cell.classList.add('disabled');
+      startTimer();
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      timer = 30;
+      updateTimer();
+      
+      timerInterval = setInterval(() => {
+        timer--;
+        updateTimer();
+        if (timer <= 0) {
+          clearInterval(timerInterval);
+          document.getElementById('timer').textContent = 'انتهى الوقت!';
+        }
+      }, 1000);
+    }
+
+    function updateTimer() {
+      const el = document.getElementById('timer');
+      el.textContent = `⏱️ 00:${timer.toString().padStart(2, '0')}`;
+      el.className = timer > 10 ? 'timer normal' : timer > 5 ? 'timer warning' : 'timer danger';
+    }
+
+    function nextQuestion() {
+      if (!currentLetter) return;
+      const cells = document.querySelectorAll('.hex-cell[data-letter="' + currentLetter + '"]');
+      cells[0].classList.remove('disabled', 'team1', 'team2');
+      selectCell(currentLetter, cells[0]);
+    }
+
+    function clearQuestion() {
+      clearInterval(timerInterval);
+      document.getElementById('currentLetter').textContent = '-';
+      document.getElementById('questionText').textContent = 'اضغط على أي خلية للحصول على سؤال...';
+      document.getElementById('timer').textContent = '⏱️ 00:30';
+      document.getElementById('timer').className = 'timer';
+    }
+
+    function addScore(team, points) {
+      scores[team-1] += points;
+      if (scores[team-1] < 0) scores[team-1] = 0;
+      document.getElementById('score' + team).textContent = scores[team-1];
+    }
+
+    function claimCell(team) {
+      if (!currentLetter) return;
+      const cells = document.querySelectorAll('.hex-cell[data-letter="' + currentLetter + '"]');
+      cells.forEach(cell => {
+        cell.classList.remove('team1', 'team2');
+        cell.classList.add('team' + team);
+      });
+      addScore(team, 1);
+      clearQuestion();
+    }
+
+    // بدء اللعبة
+    createHexGrid();
+  </script>
+</body>
+</html>
